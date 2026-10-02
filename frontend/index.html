@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    ```
+    <title>House Clustering</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: white;
+            padding: 35px;
+            border-radius: 15px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            color: #222;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #777;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 7px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 15px;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: #667eea;
+        }
+
+        button {
+            width: 100%;
+            padding: 13px;
+            margin-top: 10px;
+            border: none;
+            border-radius: 8px;
+            background: #667eea;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #5568d9;
+        }
+
+        .result {
+            display: none;
+            margin-top: 25px;
+            padding: 20px;
+            text-align: center;
+            background: #f1f3ff;
+            border-radius: 10px;
+        }
+
+        .result h2 {
+            color: #667eea;
+            margin-bottom: 8px;
+        }
+
+        .cluster-number {
+            font-size: 30px;
+            font-weight: bold;
+            color: #222;
+        }
+
+        .error {
+            color: red;
+            margin-top: 5px;
+            font-size: 14px;
+            display: none;
+        }
+    </style>
+    ```
+
+</head>
+
+<body>
+
+    ```
+    <div class="container">
+
+        <h1>House Clustering</h1>
+
+        <p class="subtitle">
+            Enter house details to predict its cluster
+        </p>
+
+        <form id="houseForm">
+
+            <div class="form-group">
+                <label for="area">Area (sqft)</label>
+                <input type="number" id="area" placeholder="Example: 1500" min="1" required>
+            </div>
+
+            <div class="form-group">
+                <label for="bedrooms">Bedrooms</label>
+                <input type="number" id="bedrooms" placeholder="Example: 3" min="1" required>
+            </div>
+
+            <div class="form-group">
+                <label for="bathrooms">Bathrooms</label>
+                <input type="number" id="bathrooms" placeholder="Example: 2" min="1" required>
+            </div>
+
+            <div class="form-group">
+                <label for="price">Price (Lakhs)</label>
+                <input type="number" id="price" placeholder="Example: 70" min="1" required>
+            </div>
+
+            <div class="form-group">
+                <label for="age">Age (Years)</label>
+                <input type="number" id="age" placeholder="Example: 5" min="0" required>
+            </div>
+
+            <button type="submit">
+                Predict Cluster
+            </button>
+
+        </form>
+
+        <div class="result" id="result">
+
+            <h2>Prediction Result</h2>
+
+            <p>
+                House belongs to
+            </p>
+
+            <div class="cluster-number" id="clusterResult">
+                Cluster 3
+            </div>
+
+        </div>
+
+        <div class="error" id="errorMessage">
+            Please enter valid house details.
+        </div>
+
+    </div>
+
+    <script>
+
+        const form = document.getElementById("houseForm");
+
+        const resultBox = document.getElementById("result");
+
+        const clusterResult = document.getElementById("clusterResult");
+
+        const errorMessage = document.getElementById("errorMessage");
+
+
+        form.addEventListener("submit", async function (event) {
+
+            event.preventDefault();
+
+
+            const area = Number(document.getElementById("area").value);
+
+            const bedrooms = Number(document.getElementById("bedrooms").value);
+
+            const bathrooms = Number(document.getElementById("bathrooms").value);
+
+            const price = Number(document.getElementById("price").value);
+
+            const age = Number(document.getElementById("age").value);
+
+
+            // Check input values
+
+            if (
+                area <= 0 ||
+                bedrooms <= 0 ||
+                bathrooms <= 0 ||
+                price <= 0 ||
+                age < 0
+            ) {
+
+                errorMessage.style.display = "block";
+
+                resultBox.style.display = "none";
+
+                return;
+            }
+
+
+            errorMessage.style.display = "none";
+
+
+            try {
+
+                // Send data to Flask backend
+
+                const response = await fetch(
+                    "http://127.0.0.1:5000/predict",
+                    {
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+
+                        body: JSON.stringify({
+                            area: area,
+                            bedrooms: bedrooms,
+                            bathrooms: bathrooms,
+                            price: price,
+                            age: age
+                        })
+                    }
+                );
+
+
+                // Get prediction from backend
+
+                const data = await response.json();
+
+
+                // Display cluster
+
+                clusterResult.textContent =
+                    "Cluster " + data.cluster;
+
+                resultBox.style.display = "block";
+
+            }
+
+            catch (error) {
+
+                console.log(error);
+
+                errorMessage.textContent =
+                    "Backend connection failed. Make sure app.py is running.";
+
+                errorMessage.style.display = "block";
+
+                resultBox.style.display = "none";
+
+            }
+
+        });
+
+    </script>
+
+    ```
+
+</body>
+
+</html>
